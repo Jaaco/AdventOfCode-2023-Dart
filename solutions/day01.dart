@@ -1,39 +1,74 @@
 import '../utils/index.dart';
 
-/// Every day should extend [GenericDay] to have access to the corresponding
-/// input and a common interface.
-///
-/// Naming convention is set to pad any single-digit day with `0` to have proper
-/// ordering of files and correct mapping between input for days and the day
-/// files.
 class Day01 extends GenericDay {
-  // call the superclass with an integer == today´s day
   Day01() : super(1);
 
-  /// The [InputUtil] can be accessed through the superclass variable `input`. \
-  /// There are several methods in that class that parse the input in different
-  /// ways, an example is given below
-  ///
-  /// The return type of this is `dynamic` for [GenericDay], so you can decide
-  /// on a day-to-day basis what this function should return.
   @override
-  List<int> parseInput() {
+  List<String> parseInput() {
     final lines = input.getPerLine();
-    // exemplary usage of ParseUtil class
-    return ParseUtil.stringListToIntList(lines);
+
+    return lines;
   }
 
-  /// The `solvePartX` methods always return a int, the puzzle solution. This
-  /// solution will be printed in main.
   @override
   int solvePart1() {
-    // TODO implement
-    return 0;
+    final pattern = RegExp('[0-9]');
+
+    return _sumOfString(pattern: pattern);
   }
 
   @override
   int solvePart2() {
-    // TODO implement
-    return 0;
+    final patternSpelled = numbers.map((n) => n.pattern).join('|');
+    final pattern = RegExp('[0-9]|$patternSpelled');
+
+    return _sumOfString(pattern: pattern);
   }
+
+  int _sumOfString({required RegExp pattern}) {
+    final inputLines = parseInput();
+
+    final valuePerLine = <int>[];
+
+    for (final line in inputLines) {
+      final numbersInLine = pattern.allMatches(line).map(_intFromPattern);
+
+      final valueOfLine = numbersInLine.first * 10 + numbersInLine.last;
+
+      valuePerLine.add(valueOfLine);
+    }
+
+    return valuePerLine.sum;
+  }
+
+  int _intFromPattern(RegExpMatch match) {
+    final numberAsString = match[0]!;
+
+    return numberAsString.length > 1
+        ? _intFromSpelled(numberAsString)
+        : int.parse(numberAsString);
+  }
+
+  int _intFromSpelled(String spelled) {
+    return numbers.firstWhere((element) => element.pattern == spelled).number;
+  }
+}
+
+const numbers = [
+  Number('one', 1),
+  Number('two', 2),
+  Number('three', 3),
+  Number('four', 4),
+  Number('five', 5),
+  Number('six', 6),
+  Number('seven', 7),
+  Number('eight', 8),
+  Number('nine', 9),
+];
+
+class Number {
+  const Number(this.pattern, this.number);
+
+  final String pattern;
+  final int number;
 }
