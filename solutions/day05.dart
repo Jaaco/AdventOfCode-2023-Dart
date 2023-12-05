@@ -13,75 +13,54 @@ class Day05 extends GenericDay {
 
     final seeds = _getSeeds(input);
 
-    final mappings = _getMappings(input).map(getMappingsFromString);
+    final mappings = _getMappings(input).map(_getMappingsFromString);
 
     return seeds
-        .map((seed) => applyMappingsRecursively(seed, mappings))
+        .map((seed) => _applyMappingsRecursively(seed, mappings))
         .reduce(math.min);
   }
 
-  // bruteforce part 2 forward
-  // @override
-  // int solvePart2() {
-  //   final input = parseInput();
-
-  //   final seeds = _getSeedsWithRanges(input);
-
-  //   final mappings = _getMappings(input).map(getMappingsFromString);
-
-  //   return seeds.map((seed) => seedToLocation(seed, mappings)).reduce(math.min);
-  // }
-
-  // --
   // bruteforce part 2 backward
   @override
   int solvePart2() {
     final input = parseInput();
     final seeds = _getSeedRanges(input);
     final mappings =
-        _getMappings(input).map(getReversedMappingsFromString).toList();
+        _getMappings(input).map(_getReversedMappingsFromString).toList();
 
     final reversedMappings = mappings.reversed.toList();
 
-    final locations =
-        reversedMappings[0].sorted((a, b) => a.end.compareTo(b.end));
+    var location = 0;
+    while (true) {
+      final theoreticalSeed =
+          _applyMappingsRecursively(location, reversedMappings);
 
-    for (final locationRange in locations) {
-      for (var location = locationRange.start;
-          location < locationRange.end;
-          location += 1) {
-        final theoreticalSeed =
-            applyMappingsRecursively(location, reversedMappings);
+      for (final seedRange in seeds) {
+        if (seedRange.inSource(theoreticalSeed)) return theoreticalSeed;
 
-        for (final seedRange in seeds) {
-          if (seedRange.inSource(theoreticalSeed)) {
-            return theoreticalSeed;
-          }
-        }
+        location += 1;
       }
     }
-
-    throw Error();
   }
 
   // recursive function to walk through all mappings
-  int applyMappingsRecursively(
+  int _applyMappingsRecursively(
     int from,
     Iterable<Iterable<Mapping>> mappings, {
     int position = 0,
   }) {
     if (position == mappings.length) return from;
 
-    final to = applyMapping(from, mappings.elementAt(position));
+    final to = _applyMapping(from, mappings.elementAt(position));
 
-    return applyMappingsRecursively(
+    return _applyMappingsRecursively(
       to,
       mappings,
       position: position + 1,
     );
   }
 
-  int applyMapping(int input, Iterable<Mapping> mappings) {
+  int _applyMapping(int input, Iterable<Mapping> mappings) {
     final mapping = mappings.firstWhereOrNull((e) => e.inSource(input));
 
     // either use offset of mapping
@@ -89,18 +68,18 @@ class Day05 extends GenericDay {
     return input + (mapping?.offset ?? 0);
   }
 
-  Iterable<Mapping> getMappingsFromString(String mapping) {
+  Iterable<Mapping> _getMappingsFromString(String mapping) {
     return (mapping.split(':\n')[1].split('\n')..removeLast())
-        .map(rowToMapping);
+        .map(_rowToMapping);
   }
 
-  Iterable<Mapping> getReversedMappingsFromString(String mapping) {
+  Iterable<Mapping> _getReversedMappingsFromString(String mapping) {
     final mappingStrings = (mapping.split(':\n')[1].split('\n')..removeLast());
 
-    return mappingStrings.map(rowToReversedMapping);
+    return mappingStrings.map(_rowToReversedMapping);
   }
 
-  Mapping rowToMapping(String row) {
+  Mapping _rowToMapping(String row) {
     final rowSplit = row.split(' ');
     final destStart = int.parse(rowSplit[0]);
     final sourceStart = int.parse(rowSplit[1]);
@@ -109,7 +88,7 @@ class Day05 extends GenericDay {
     return Mapping(sourceStart, sourceStart + range, destStart - sourceStart);
   }
 
-  Mapping rowToReversedMapping(String row) {
+  Mapping _rowToReversedMapping(String row) {
     final rowSplit = row.split(' ');
     final destStart = int.parse(rowSplit[1]); // index changed
     final sourceStart = int.parse(rowSplit[0]); // index changed
@@ -129,35 +108,13 @@ class Day05 extends GenericDay {
 
     final seedRanges = <Mapping>[];
 
-    print("initial values: $initialValues");
-
     for (var seedIndex = 0; seedIndex < initialValues.length; seedIndex += 2) {
-      print('seedindex: $seedIndex');
       final start = initialValues[seedIndex];
       final range = initialValues[seedIndex + 1];
-      seedRanges.add(Mapping(start, range, 0));
+      seedRanges.add(Mapping(start, start + range, 0));
     }
 
     return seedRanges;
-  }
-
-  Iterable<int> _getSeedsWithRanges(String input) {
-    final seedLine = input.split('\n')[0].split(': ')[1].split(' ');
-    final initialValues = seedLine.map(int.parse).toList();
-
-    final allSeeds = <int>[];
-
-    for (var seedIndex = 0; seedIndex < initialValues.length; seedIndex += 2) {
-      print('getting seeds ${seedIndex / 2 + 1} / ${initialValues.length / 2}');
-      final start = initialValues[seedIndex];
-      final range = initialValues[seedIndex + 1];
-
-      for (var i = 0; i < range; i += 1) {
-        allSeeds.add(start + i);
-      }
-    }
-
-    return allSeeds;
   }
 
   List<String> _getMappings(String input) {
@@ -172,9 +129,4 @@ class Mapping {
   final int offset;
 
   bool inSource(int x) => start <= x && x <= end;
-
-  @override
-  String toString() {
-    return 'Start: $start End: $end Offset: $offset';
-  }
 }
