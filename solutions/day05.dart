@@ -1,6 +1,13 @@
 import 'dart:math' as math;
 import '../utils/index.dart';
 
+// tried 100.000 but got wrong answer
+// tried 10.000 but got wrong answer
+// tried 1.000 but got wrong answer
+// tried 100 but got wrong answer
+// tried 10 but got wrong answer
+final int stepSize = 1;
+
 class Day05 extends GenericDay {
   Day05() : super(5);
 
@@ -9,20 +16,34 @@ class Day05 extends GenericDay {
 
   @override
   int solvePart1() {
+    return 0;
+    // final input = parseInput();
+
+    // final seeds = _getSeeds(input);
+
+    // final mappings = _getMappings(input).map(_getMappingsFromString);
+
+    // return seeds
+    //     .map((seed) => _applyMappingsRecursively(seed, mappings))
+    //     .reduce(math.min);
+  }
+
+  @override
+  int solvePart2() {
     final input = parseInput();
 
-    final seeds = _getSeeds(input);
+    final seedRanges = _getSeedRanges(input);
 
     final mappings = _getMappings(input).map(_getMappingsFromString);
 
-    return seeds
-        .map((seed) => _applyMappingsRecursively(seed, mappings))
+    return seedRanges
+        .map((seedRange) => _minOfSeedRange(seedRange, mappings))
         .reduce(math.min);
   }
 
   // bruteforce part 2 backward
   @override
-  int solvePart2() {
+  int solvePart2back() {
     final input = parseInput();
     final seeds = _getSeedRanges(input);
     final mappings =
@@ -32,6 +53,7 @@ class Day05 extends GenericDay {
 
     var location = 0;
     while (true) {
+      if (location % 10000000 == 0) print(location);
       final theoreticalSeed =
           _applyMappingsRecursively(location, reversedMappings);
 
@@ -79,6 +101,40 @@ class Day05 extends GenericDay {
     return mappingStrings.map(_rowToReversedMapping);
   }
 
+  int _minOfSeedRange(Mapping seedRange, Iterable<Iterable<Mapping>> mappings) {
+    print('Checking seedrange: ${seedRange.start}');
+
+    var min = -1 >>> 1;
+    var seedOfMin = 0;
+
+    // tried this with different step sizes to see if I could speed it up
+    // and then do a fine-grain search near the minimum
+    for (var seed = seedRange.start; seed < seedRange.end; seed += stepSize) {
+      final location = _applyMappingsRecursively(seed, mappings);
+
+      if (location < min) {
+        min = location;
+        seedOfMin = seed;
+      }
+    }
+
+    // var exactMin = -1 >>> 1;
+
+    // for (var exactSeed = seedOfMin - 2 * stepSize;
+    //     exactSeed < seedOfMin + stepSize;
+    //     exactSeed += 1) {
+    //   final exactLocation = _applyMappingsRecursively(exactSeed, mappings);
+
+    //   if (exactLocation < exactMin) {
+    //     exactMin = exactLocation;
+    //   }
+    // }
+    // print('Min of seedrange: $exactMin');
+
+    // return exactMin;
+    return min;
+  }
+
   Mapping _rowToMapping(String row) {
     final rowSplit = row.split(' ');
     final destStart = int.parse(rowSplit[0]);
@@ -94,7 +150,7 @@ class Day05 extends GenericDay {
     final sourceStart = int.parse(rowSplit[0]); // index changed
     final range = int.parse(rowSplit[2]);
 
-    return Mapping(sourceStart, sourceStart + range, destStart - sourceStart);
+    return Mapping(sourceStart, sourceStart + range, sourceStart - destStart);
   }
 
   Iterable<int> _getSeeds(String input) {
